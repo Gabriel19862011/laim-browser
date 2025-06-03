@@ -1,0 +1,22 @@
+# === Virtual Environment ===
+myenv/
+venv/
+.env/
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*.pyd
+*.so
+.Python
+*.log
+
+# === Build ===
+build/
+dist/
+*.egg-info/
+*.spec
+
+# === IDE ===
+.vscode/
+.idea/

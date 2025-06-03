@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{browser_title}}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            direction: ltr;
+        }
+
+        .rtl {
+            direction: rtl;
+        }
+
+        .search-container {
+            margin-bottom: 30px;
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 12px 20px;
+            border: 2px solid #32cd32;
+            border-radius: 30px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .search-engines {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .search-engine {
+            padding: 5px 10px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .search-engine.active {
+            background: #32cd32;
+            color: white;
+        }
+
+        .hex-container {
+            display: flex;
+            gap: 100px;
+            margin-top: 20px;
+        }
+
+        .hex-group {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .hex-row {
+            display: flex;
+            gap: 15px;
+            position: relative;
+        }
+
+        .hex-row:first-child {
+            left: 58px;
+        }
+
+        .hex-tile {
+            width: 100px;
+            height: 115px;
+            background-color: #32cd32;
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .hex-tile::before {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            right: 3px;
+            bottom: 3px;
+            background-color: white;
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            z-index: 1;
+        }
+
+        .hex-content {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            justify-content: center;
+        }
+
+        .hex-icon {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 5px;
+            object-fit: contain;
+        }
+
+        .hex-title {
+            font-size: 12px;
+            text-align: center;
+            max-width: 90%;
+            word-break: break-word;
+        }
+
+        .add-icon {
+            font-size: 30px;
+            color: #32cd32;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .modal-buttons button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-cancel {
+            background: #ddd;
+        }
+
+        .btn-save {
+            background: #32cd32;
+            color: white;
+        }
+
+        @media (max-width: 800px) {
+            .hex-container {
+                flex-direction: column;
+                gap: 50px;
+            }
+           
+            .hex-tile {
+                width: 80px;
+                height: 92px;
+            }
+           
+            .hex-row:first-child {
+                left: 46px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="search-container">
+        <input type="text" class="search-box" placeholder="{{search_placeholder}}">
+        <div class="search-engines">
+            <div class="search-engine active" data-engine="google">Google</div>
+            <div class="search-engine" data-engine="yandex">Yandex</div>
+            <div class="search-engine" data-engine="bing">Bing</div>
+            <div class="search-engine" data-engine="duckduckgo">DuckDuckGo</div>
+        </div>
+    </div>
+
+    <div class="hex-container">
+        <div class="hex-group">
+            <div class="hex-row">
+                <div class="hex-tile" data-index="0">
+                    <div class="hex-content">
+                        <div class="add-icon">+</div>
+                    </div>
+                </div>
+                <div class="hex-tile" data-index="1"></div>
+            </div>
+            <div class="hex-row">
+                <div class="hex-tile" data-index="2"></div>
+                <div class="hex-tile" data-index="3"></div>
+                <div class="hex-tile" data-index="4"></div>
+            </div>
+        </div>
+       
+        <div class="hex-group">
+            <div class="hex-row">
+                <div class="hex-tile" data-index="5"></div>
+                <div class="hex-tile" data-index="6"></div>
+            </div>
+            <div class="hex-row">
+                <div class="hex-tile" data-index="7"></div>
+                <div class="hex-tile" data-index="8"></div>
+                <div class="hex-tile" data-index="9"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="addModal">
+        <div class="modal-content">
+            <h2>{{add_bookmark}}</h2>
+            <div class="form-group">
+                <label for="siteUrl">{{url_label}}:</label>
+                <input type="text" id="siteUrl" placeholder="https://example.com">
+            </div>
+            <div class="form-group">
+                <label for="siteTitle">{{title_label}}:</label>
+                <input type="text" id="siteTitle" placeholder="{{default_title}}">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-cancel" id="cancelBtn">{{cancel}}</button>
+                <button class="btn-save" id="saveBtn">{{save}}</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+    <script>
+        // Глобальные переводы
+        const translations = {
+            'search_engines': {
+                'ru': ['Google', 'Яндекс', 'Bing', 'DuckDuckGo'],
+                'en': ['Google', 'Yandex', 'Bing', 'DuckDuckGo'],
+                'tt': ['Google', 'Яндекс', 'Bing', 'DuckDuckGo'],
+                'ar': ['جوجل', 'ياندكس', 'بينج', 'داكداكجو']
+            },
+            'url_label': {
+                'ru': 'URL сайта',
+                'en': 'Site URL',
+                'tt': 'Сайт URL',
+                'ar': 'رابط الموقع'
+            },
+            'title_label': {
+                'ru': 'Название',
+                'en': 'Title',
+                'tt': 'Исем',
+                'ar': 'العنوان'
+            },
+            'default_title': {
+                'ru': 'Мой сайт',
+                'en': 'My site',
+                'tt': 'Минем сайт',
+                'ar': 'موقعي'
+            },
+            'cancel': {
+                'ru': 'Отмена',
+                'en': 'Cancel',
+                'tt': 'Кире кагу',
+                'ar': 'إلغاء'
+            },
+            'save': {
+                'ru': 'Сохранить',
+                'en': 'Save',
+                'tt': 'Саклау',
+                'ar': 'حفظ'
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof qt !== 'undefined') {
+                new QWebChannel(qt.webChannelTransport, function(channel) {
+                    window.pyObject = channel.objects.pyObject;
+                    initApp();
+                });
+            } else {
+                initApp();
+            }
+        });
+
+        function initApp() {
+            // Получаем текущий язык
+            const getLanguage = window.pyObject ? 
+                window.pyObject.getLanguage().then(setLanguage) : 
+                Promise.resolve('en').then(setLanguage);
+
+            // Инициализация закладок
+            const loadBookmarks = window.pyObject ?
+                window.pyObject.load_bookmarks().then(initBookmarks) :
+                Promise.resolve([]).then(initBookmarks);
+
+            Promise.all([getLanguage, loadBookmarks]).then(initUI);
+        }
+
+        function setLanguage(lang) {
+            document.body.classList.toggle('rtl', lang === 'ar');
+            return lang;
+        }
+
+        function initUI(lang) {
+            // Обновляем поисковые системы
+            updateSearchEngines(lang);
+            
+            // Инициализируем поиск
+            initSearch();
+            
+            // Инициализируем шестиугольники
+            initHexGrid();
+        }
+
+        function updateSearchEngines(lang) {
+            const engines = document.querySelectorAll('.search-engine');
+            const engineNames = translations['search_engines'][lang] || translations['search_engines']['en'];
+            
+            engines.forEach((engine, index) => {
+                if (engineNames[index]) {
+                    engine.textContent = engineNames[index];
+                }
+            });
+        }
+
+        function initSearch() {
+            const searchBox = document.querySelector('.search-box');
+            const searchEngines = document.querySelectorAll('.search-engine');
+            
+            let currentEngine = 'google';
+            
+            searchEngines.forEach(engine => {
+                engine.addEventListener('click', function() {
+                    searchEngines.forEach(e => e.classList.remove('active'));
+                    this.classList.add('active');
+                    currentEngine = this.getAttribute('data-engine');
+                });
+            });
+            
+            searchBox.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const query = this.value.trim();
+                    if (!query) return;
+                    
+                    if (window.pyObject) {
+                        window.pyObject.getSearchEngine().then(engine => {
+                            window.location.href = engine + encodeURIComponent(query);
+                        });
+                    } else {
+                        // Fallback для тестирования без PyQt
+                        window.open(`https://google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+                    }
+                }
+            });
+        }
+
+        function initHexGrid() {
+            const hexTiles = document.querySelectorAll('.hex-tile');
+            hexTiles.forEach((tile, index) => {
+                if (index > 0) {
+                    tile.innerHTML = `
+                        <div class="hex-content">
+                            <div class="add-icon">+</div>
+                        </div>
+                    `;
+                    tile.onclick = function() {
+                        showAddModal(index);
+                    };
+                }
+            });
+        }
+
+        function initBookmarks(bookmarksData) {
+            const bookmarks = typeof bookmarksData === 'string' ? 
+                JSON.parse(bookmarksData) : bookmarksData;
+                
+            const hexTiles = document.querySelectorAll('.hex-tile');
+            
+            bookmarks.forEach((bookmark, index) => {
+                if (bookmark && index < hexTiles.length) {
+                    updateHexTile(hexTiles[index], bookmark);
+                }
+            });
+            
+            // Первая пустая ячейка для добавления
+            const firstEmptyIndex = bookmarks.findIndex(b => !b);
+            if (firstEmptyIndex !== -1 && firstEmptyIndex < hexTiles.length) {
+                setAddButton(hexTiles[firstEmptyIndex], firstEmptyIndex);
+            }
+        }
+
+        function updateHexTile(tile, bookmark) {
+            tile.innerHTML = `
+                <div class="hex-content">
+                    <div class="hex-icon">${bookmark.title.charAt(0).toUpperCase()}</div>
+                    <div class="hex-title">${bookmark.title}</div>
+                </div>
+            `;
+            
+            tile.onclick = function() {
+                window.location.href = bookmark.url;
+            };
+        }
+
+        function setAddButton(tile, index) {
+            tile.innerHTML = `
+                <div class="hex-content">
+                    <div class="add-icon">+</div>
+                </div>
+            `;
+            
+            tile.onclick = function() {
+                showAddModal(index);
+            };
+        }
+
+        function showAddModal(index) {
+            const modal = document.getElementById('addModal');
+            const saveBtn = document.getElementById('saveBtn');
+            
+            saveBtn.onclick = function() {
+                const url = document.getElementById('siteUrl').value.trim();
+                const title = document.getElementById('siteTitle').value.trim();
+                
+                if (!url) {
+                    alert('Please enter URL');
+                    return;
+                }
+                
+                if (window.pyObject) {
+                    window.pyObject.addBookmark(
+                        url.startsWith('http') ? url : `https://${url}`,
+                        title || 'New Bookmark'
+                    ).then(() => {
+                        window.location.reload();
+                    });
+                }
+                
+                modal.style.display = 'none';
+            };
+            
+            document.getElementById('cancelBtn').onclick = function() {
+                modal.style.display = 'none';
+            };
+            
+            modal.style.display = 'flex';
+        }
+
+        function getTranslation(key, lang) {
+            return translations[key] && translations[key][lang] || key;
+        }
+    </script>
