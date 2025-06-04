@@ -1,13 +1,19 @@
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QPushButton, QComboBox, QCheckBox,
     QWidget, QFrame, QLabel, QHBoxLayout, QFileDialog,
-    QMessageBox, QGroupBox, QLineEdit, QScrollArea
+    QMessageBox, QGroupBox, QLineEdit, QScrollArea, QApplication
 )
 from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import Qt
 import os
 from styles import main_styles as styles
 from proxy_settings import ProxySettingsDialog
+
+import requests
+import os
+import sys
+from packaging import version
+from version import VERSION
 
 class SettingsDialog(QDialog):
     def __init__(self, parent=None):
@@ -200,12 +206,105 @@ class SettingsDialog(QDialog):
         
         return widget
 
-    def check_updates(self):
-        QMessageBox.information(
+def check_updates(self):
+    try:
+        repo = "Gabriel19862011/laim-browser"
+        current_version = VERSION  # Добавляем эту строку
+        headers = {"User-Agent": "LaimBrowser"}
+        url = f"https://api.github.com/repos/{repo}/releases"  # Пока используем все релизы
+        
+        response = requests.get(url, headers=headers)
+        if response.status_code == 404:
+            QMessageBox.information(
+                self,
+                self.parent_window.tr("Updates"),
+                self.parent_window.tr("No releases found on GitHub")
+            )
+            return
+            
+        response.raise_for_status()
+        data = response.json()
+        
+        # Теперь data - это список всех релизов
+        if not data:
+            QMessageBox.information(
+                self,
+                self.parent_window.tr("Updates"),
+                self.parent_window.tr("No releases available")
+            )
+            return
+            
+        # Берем первый (последний) релиз из списка
+        latest_release = data[0]
+        latest_version = latest_release["tag_name"].replace("v", "").strip()
+        
+        # Проверяем assets (должна быть небольшая корректировка)
+        if not latest_release.get("assets"):
+            QMessageBox.warning(
+                self,
+                self.parent_window.tr("Warning"),
+                self.parent_window.tr("Release found but no executable file attached")
+            )
+            return
+            
+        download_url = latest_release["assets"][0]["browser_download_url"]
+        
+        # Сравнение версий
+        if version.parse(latest_version) > version.parse(current_version):
+            msg = QMessageBox(self)
+            msg.setWindowTitle(self.parent_window.tr("Updates"))
+            msg.setText(self.parent_window.tr("New version available: {}").format(latest_version))
+            msg.setInformativeText(self.parent_window.tr("Do you want to download it?"))
+            
+            download_btn = msg.addButton(self.parent_window.tr("Download"), QMessageBox.ButtonRole.AcceptRole)
+            cancel_btn = msg.addButton(self.parent_window.tr("Later"), QMessageBox.ButtonRole.RejectRole)
+            
+            msg.exec()
+            
+            if msg.clickedButton() == download_btn:
+                self.download_and_install_update(download_url)
+        else:
+            QMessageBox.information(
+                self,
+                self.parent_window.tr("Updates"),
+                self.parent_window.tr("You have the latest version: {}").format(current_version)
+            )
+            
+    except Exception as e:
+        QMessageBox.warning(
             self,
-            self.parent_window.tr("Updates"),
-            self.parent_window.tr("You are using the latest version of Laim Browser")
+            self.parent_window.tr("Error"),
+            self.parent_window.tr("Update check failed: {}").format(str(e))
         )
+
+    def download_and_install_update(self, url):
+        try:
+            temp_dir = os.path.join(os.environ["TEMP"], "LaimBrowserUpdate")
+            os.makedirs(temp_dir, exist_ok=True)
+            
+            file_name = url.split("/")[-1]
+            file_path = os.path.join(temp_dir, file_name)
+            
+            response = requests.get(url, stream=True)
+            response.raise_for_status()
+            
+            with open(file_path, "wb") as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+            
+            if sys.platform == "win32":
+                os.startfile(file_path)
+            else:
+                os.system(f'open "{file_path}"' if sys.platform == "darwin" else f'xdg-open "{file_path}"')
+            
+            QApplication.quit()
+            
+        except Exception as e:
+            QMessageBox.warning(
+                self,
+                self.parent_window.tr("Error"),
+                self.parent_window.tr("Failed to download update: {}").format(str(e))
+            )
 
     def accept(self):
         # Валидация пути загрузки
